@@ -1,4 +1,4 @@
-import csv, requests, sys, json
+import csv, requests, sys, json, re
 
 # Usage: python exac_variant_finder.py filename.csv (where filename.csv is a comma separated value file with headings:
 # 'Primary Key, Ensembl Transcript Number, cDNA position (from STARLiMS, without c. or nucleotide change), CDS WT allele, CDS alt allele, WT allele from STARLiMS, alt allele from STARLiMS, amin acid change, zygosity, variant status, protein effect, exon/intron, exonintron, DMUDBEXP, mode of inheritance, gene, STARLiMS RefSeq, cDNA change, cDNA position)
@@ -10,12 +10,11 @@ class Variant:
 
 # Define variables for data from input filename.csv
 
-    def __init__(self,gene,transcript,cDNA,wt_allele,alt_allele,zygosity,variant_status,mode,protein_effect):
+    def __init__(self,gene,transcript,cDNA_change,aa_change,zygosity,variant_status,mode,protein_effect):
         self.gene = gene
         self.transcript = transcript
-        self.cDNA = cDNA
-	self.wt_allele = wt_allele
-	self.alt_allele = alt_allele
+        self.cDNA_change = cDNA_change
+        self.aa_change = aa_change
         self.zygosity = zygosity
         self.variant_status = variant_status
         self.mode = mode
@@ -23,8 +22,8 @@ class Variant:
 
 # Generate genomic co-ordinates from ensembl REST API using cDNA and transcript and add to list of variants
 
-    def ensembl_capture(self,transcript,cDNA):
-        cDNA_input = cDNA + ".." + cDNA + "?"
+    def ensembl_capture(self,transcript,cDNA_start,cDNA_stop):
+        cDNA_input = str(cDNA_start) + ".." + str(cDNA_stop) + "?"
         server = "http://grch37.rest.ensembl.org"
         ext = "/map/cds/"+ transcript + "/" + cDNA_input
 
@@ -42,9 +41,9 @@ class Variant:
         self.strand = decoded['mappings'][0]['strand']
 
 # Generate ExAC API list, submit and receive output
-    def exac_capture(self):
+    def exac_capture(self,wt_allele,alt_allele):
         server = "http://exac.hms.harvard.edu"
-        ext = "/rest/variant/variant/" + str(self.chromosome) + "-" + str(self.genomic_start) + "-" + str(self.wt_allele) + "-" + str(self.alt_allele)
+        ext = "/rest/variant/variant/" + str(self.chromosome) + "-" + str(self.genomic_start) + "-" + wt_allele + "-" + alt_allele
         
         r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
         
@@ -135,20 +134,40 @@ with open(file) as infile:
     # Add data to Variant class
     for row in csvreader:
         print "Converting row " + row[0]
-        row[0] = Variant(row[15], row[1], row[2], row[3], row[4], row[8], row[9], row[14], row[10])
-        row[0].ensembl_capture(row[1],row[2])
-        row[0].exac_capture()
-        # Add amplicon object name to amplicons array
-        variants.append(row[0])
-
+        if '>' in row[3]: 
+            row[0] = Variant(row[1], row[2], row[3], row[4], row[8], row[7], row[11], row[10])
+            wt_allele = row[3].split('>',1)[0][-1]
+            alt_allele = row[3].split('>',1)[1]
+            print wt_allele, alt_allele
+            cDNA_start = re.findall(r'\d+',row[3])[0]
+            cDNA_stop = re.findall(r'\d+',row[3])[0]
+            print cDNA_start, cDNA_stop
+            row[0].ensembl_capture(row[2],cDNA_start,cDNA_stop)
+            row[0].exac_capture(wt_allele,alt_allele)
+            # Add amplicon object name to amplicons array
+            variants.append(row[0])
+#            print "Row contains > character"
+#            cDNA_start = re.findall(r'\d+',row[3)]
+#            cDNA_stop = row[3].map(int,re.findall(r'\d+',cDNA))
+#            print(cDNA_start,cDNA_stop)
+#            wt_allele = row[3].split('>',1)[0][-1]
+#            alt_allele = row[3].split('>',1)[1]
+#            print (wt_allele, alt_allele)
+#            row[0] = Variant(row[1], row[2], row[3], row[4], row[8], row[7], row[11], row[10])
+#            row[0].ensembl_capture(cDNA_start,cDNA_stop)
+#            row[0].exac_capture(wt_allele,alt_allele)
+#            # Add amplicon object name to amplicons array
+#            variants.append(row[0])
+#        else:
+#            variants.append("Not an SNV")
  
 # Open outfile for writing successfully retrieved variants from ExAC
 with open('output.csv', 'wb') as outfile:
     csvwriter = csv.writer(outfile, delimiter=',')
     # Add required header row
-    csvwriter.writerow(["gene", "transcript", "cDNA", "chromosome", "genomic_start", "genomic_end", "strand", "wt_allele", "alt_allele", "zygosity", "variant_status", "mode", "protein_effect", "allele_count", "tot_allele_freq", "total_alleles", "hom_NFE", "hom_EA", "hom_Other", "hom_AFR", "hom_LAT", "hom_SA", "hom_FE", "pop_NFE", "pop_EA", "pop_Other", "pop_AFR", "pop_LAT", "pop_SA", "pop_FE" ,"pop_total_NFE", "pop_total_EA", "pop_total_Other", "pop_total_AFR", "pop_total_LAT", "pop_total_SA", "pop_total_FE", "freq_NFE", "freq_EA", "freq_Other", "freq_AFR", "freq_LAT", "freq_SA", "freq_FE"]) 
+    csvwriter.writerow(["gene", "transcript", "cDNA_change", "chromosome", "genomic_start", "genomic_end", "strand", "wt_allele", "alt_allele", "zygosity", "variant_status", "mode", "protein_effect", "allele_count", "tot_allele_freq", "total_alleles", "hom_NFE", "hom_EA", "hom_Other", "hom_AFR", "hom_LAT", "hom_SA", "hom_FE", "pop_NFE", "pop_EA", "pop_Other", "pop_AFR", "pop_LAT", "pop_SA", "pop_FE" ,"pop_total_NFE", "pop_total_EA", "pop_total_Other", "pop_total_AFR", "pop_total_LAT", "pop_total_SA", "pop_total_FE", "freq_NFE", "freq_EA", "freq_Other", "freq_AFR", "freq_LAT", "freq_SA", "freq_FE"]) 
     # Cycle through created variant objects
     for variant in variants:
-        row = [variant.gene, variant.transcript, variant.cDNA, variant.chromosome, variant.genomic_start, variant.genomic_end, variant.strand, variant.wt_allele, variant.alt_allele, variant.zygosity, variant.variant_status, variant.mode, variant.protein_effect, variant.allele_count, variant.total_allele_freq, variant.total_alleles, variant.hom_NFE, variant.hom_EA, variant.hom_Other, variant.hom_AFR, variant.hom_LAT, variant.hom_SA, variant.hom_FE, variant.pop_NFE, variant.pop_EA, variant.pop_Other, variant.pop_AFR, variant.pop_LAT, variant.pop_SA, variant.pop_FE, variant.pop_total_NFE, variant.pop_total_EA, variant.pop_total_Other, variant.pop_total_AFR, variant.pop_total_LAT, variant.pop_total_SA, variant.pop_total_FE, variant.freq_NFE, variant.freq_EA, variant.freq_Other, variant.freq_AFR, variant.freq_LAT, variant.freq_SA, variant.freq_FE]
+        row = [variant.gene, variant.transcript, variant.cDNA_change, variant.chromosome, variant.genomic_start, variant.genomic_end, variant.strand, wt_allele, alt_allele, variant.zygosity, variant.variant_status, variant.mode, variant.protein_effect, variant.allele_count, variant.total_allele_freq, variant.total_alleles, variant.hom_NFE, variant.hom_EA, variant.hom_Other, variant.hom_AFR, variant.hom_LAT, variant.hom_SA, variant.hom_FE, variant.pop_NFE, variant.pop_EA, variant.pop_Other, variant.pop_AFR, variant.pop_LAT, variant.pop_SA, variant.pop_FE, variant.pop_total_NFE, variant.pop_total_EA, variant.pop_total_Other, variant.pop_total_AFR, variant.pop_total_LAT, variant.pop_total_SA, variant.pop_total_FE, variant.freq_NFE, variant.freq_EA, variant.freq_Other, variant.freq_AFR, variant.freq_LAT, variant.freq_SA, variant.freq_FE]
 	# Write row to outfile
         csvwriter.writerow(row)
