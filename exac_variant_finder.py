@@ -68,6 +68,7 @@ class Variant:
             self.hom_LAT = data["pop_homs"]["Latino"]
             self.hom_SA = data["pop_homs"]["South Asian"]
             self.hom_FE = data["pop_homs"]["European (Finnish)"]
+            self.tot_hom = data["hom_count"]
 
             self.pop_NFE = data["pop_acs"]["European (Non-Finnish)"]
             self.pop_EA = data["pop_acs"]["East Asian"]
@@ -85,7 +86,7 @@ class Variant:
             self.pop_total_LAT = data["pop_ans"]["Latino"]
             self.pop_total_SA = data["pop_ans"]["South Asian"]
             self.pop_total_FE = data["pop_ans"]["European (Finnish)"]
-            self.total_alleles = data["allele_num"]
+            self.tot_allele_num = data["allele_num"]
 
             self.freq_NFE = float(data["pop_acs"]["European (Non-Finnish)"])/data["pop_ans"]["European (Non-Finnish)"]
             self.freq_EA = float(data["pop_acs"]["East Asian"])/data["pop_ans"]["East Asian"]
@@ -94,7 +95,10 @@ class Variant:
             self.freq_LAT = float(data["pop_acs"]["Latino"])/data["pop_ans"]["Latino"]
             self.freq_SA = float(data["pop_acs"]["South Asian"])/data["pop_ans"]["South Asian"]
             self.freq_FE = float(data["pop_acs"]["European (Finnish)"])/data["pop_ans"]["European (Finnish)"]
+
             self.total_allele_freq = data["allele_freq"]
+
+            self.genomic_start_calc = self.genomic_start
 
         except:
             self.hom_NFE = "0"
@@ -104,6 +108,7 @@ class Variant:
             self.hom_LAT = "0"
             self.hom_SA = "0"
             self.hom_FE = "0"
+            self.tot_hom = "0"
 
             self.pop_NFE = "0"
             self.pop_EA = "0"
@@ -121,7 +126,7 @@ class Variant:
             self.pop_total_LAT = "0"
             self.pop_total_SA = "0"
             self.pop_total_FE = "0"
-            self.total_alleles = "0"
+            self.tot_allele_num = "0"
 
             self.freq_NFE = "0"
             self.freq_EA = "0"
@@ -132,6 +137,8 @@ class Variant:
             self.freq_FE = "0"
 
             self.total_allele_freq = "0"
+
+            self.genomic_start_calc = self.genomic_start
 
 # Generate ExAC API list for a second time with calculated genomic start, submit and receive output
     def exac_capture_calc(self, genomic_start_calc, wt_allele, alt_allele):
@@ -154,6 +161,7 @@ class Variant:
             self.hom_LAT = data["pop_homs"]["Latino"]
             self.hom_SA = data["pop_homs"]["South Asian"]
             self.hom_FE = data["pop_homs"]["European (Finnish)"]
+            self.tot_hom = data["hom_count"]
 
             self.pop_NFE = data["pop_acs"]["European (Non-Finnish)"]
             self.pop_EA = data["pop_acs"]["East Asian"]
@@ -171,7 +179,7 @@ class Variant:
             self.pop_total_LAT = data["pop_ans"]["Latino"]
             self.pop_total_SA = data["pop_ans"]["South Asian"]
             self.pop_total_FE = data["pop_ans"]["European (Finnish)"]
-            self.total_alleles = data["allele_num"]
+            self.tot_allele_num = data["allele_num"]
 
             self.freq_NFE = float(data["pop_acs"]["European (Non-Finnish)"])/data["pop_ans"]["European (Non-Finnish)"]
             self.freq_EA = float(data["pop_acs"]["East Asian"])/data["pop_ans"]["East Asian"]
@@ -180,7 +188,10 @@ class Variant:
             self.freq_LAT = float(data["pop_acs"]["Latino"])/data["pop_ans"]["Latino"]
             self.freq_SA = float(data["pop_acs"]["South Asian"])/data["pop_ans"]["South Asian"]
             self.freq_FE = float(data["pop_acs"]["European (Finnish)"])/data["pop_ans"]["European (Finnish)"]
+
             self.total_allele_freq = data["allele_freq"]
+
+            self.genomic_start_calc = str(genomic_start_calc)
 
         except:
             self.hom_NFE = "0"
@@ -190,6 +201,7 @@ class Variant:
             self.hom_LAT = "0"
             self.hom_SA = "0"
             self.hom_FE = "0"
+            self.tot_hom = "0"
 
             self.pop_NFE = "0"
             self.pop_EA = "0"
@@ -207,7 +219,7 @@ class Variant:
             self.pop_total_LAT = "0"
             self.pop_total_SA = "0"
             self.pop_total_FE = "0"
-            self.total_alleles = "0"
+            self.tot_allele_num = "0"
 
             self.freq_NFE = "0"
             self.freq_EA = "0"
@@ -218,6 +230,8 @@ class Variant:
             self.freq_FE = "0"
 
             self.total_allele_freq = "0"
+
+            self.genomic_start_calc = str(genomic_start_calc)
 
 # Open custom report file provided
 with open(file) as infile:
@@ -231,15 +245,15 @@ with open(file) as infile:
         row[0].ensembl_capture(row[2],row[4])
         if row[4] != row[5]: 
             if row[0].strand == 1:
-                print "forward strand"
-                print "strand +1 orig genomic start = " + str(row[0].genomic_start)
+                #print "forward strand"
+                #print "strand +1 orig genomic start = " + str(row[0].genomic_start)
                 genomic_start_calc = int(row[0].genomic_start) + int(row[5])
-                print genomic_start_calc
+                #print genomic_start_calc
             elif row[0].strand == -1:
-                print "reverse strand"
-                print "strand -1 orig genomic start = " + str(row[0].genomic_start)
+                #print "reverse strand"
+                #print "strand -1 orig genomic start = " + str(row[0].genomic_start)
                 genomic_start_calc = int(row[0].genomic_start) - int(row[5])
-                print genomic_start_calc
+                #print genomic_start_calc
             # Add amplicon object name to amplicons array
             row[0].exac_capture_calc(genomic_start_calc,row[6],row[7])
             variants.append(row[0])
@@ -253,15 +267,13 @@ with open(file) as infile:
             row[0].exac_capture(row[6],row[7])
             variants.append(row[0])
 
-#            variants.append("Not an SNV")
- 
 # Open outfile for writing successfully retrieved variants from ExAC
 with open('output.csv', 'wb') as outfile:
     csvwriter = csv.writer(outfile, delimiter=',')
     # Add required header row
-    csvwriter.writerow(["gene", "transcript", "cDNA_change", "cDNA_pos", "cDNA_add", "aa_change", "chromosome", "genomic_start", "genomic_start_calc", "strand", "wt_allele", "alt_allele", "zygosity", "variant_status", "mode", "refseq_id", "ensembl_gene_id", "exon_intron", "protein_effect", "allele_count", "tot_allele_freq", "total_alleles", "hom_NFE", "hom_EA", "hom_Other", "hom_AFR", "hom_LAT", "hom_SA", "hom_FE", "pop_NFE", "pop_EA", "pop_Other", "pop_AFR", "pop_LAT", "pop_SA", "pop_FE" ,"pop_total_NFE", "pop_total_EA", "pop_total_Other", "pop_total_AFR", "pop_total_LAT", "pop_total_SA", "pop_total_FE", "freq_NFE", "freq_EA", "freq_Other", "freq_AFR", "freq_LAT", "freq_SA", "freq_FE"]) 
+    csvwriter.writerow(["gene", "transcript", "cDNA_change", "cDNA_pos", "cDNA_add", "aa_change", "chromosome", "genomic_start", "genomic_start_calc", "strand", "wt_allele", "alt_allele", "zygosity", "variant_status", "mode", "refseq_id", "ensembl_gene_id", "exon_intron", "protein_effect", "total_allele_count", "tot_allele_num", "tot_hom", "tot_allele_freq", "hom_AFR", "hom_NFE", "hom_EA", "hom_FE", "hom_LAT", "hom_Other", "hom_SA", "pop_AFR", "pop_NFE", "pop_EA", "pop_FE", "pop_LAT", "pop_Other", "pop_SA","pop_total_AFR", "pop_total_NFE", "pop_total_EA", "pop_total_FE", "pop_total_LAT", "pop_total_Other","pop_total_SA", "freq_AFR", "freq_NFE", "freq_EA", "freq_FE", "freq_LAT", "freq_Other", "freq_SA"]) 
     # Cycle through created variant objects
     for variant in variants:
-        row = [variant.gene, variant.transcript, variant.cDNA_change, variant.cDNA_pos, variant.cDNA_add, variant.aa_change, variant.chromosome, variant.genomic_start, genomic_start_calc, variant.strand, variant.wt_allele, variant.alt_allele, variant.zygosity, variant.variant_status, variant.mode, variant.refseq_id, variant. ensembl_gene_id, variant.exon_intron, variant.protein_effect, variant.allele_count, variant.total_allele_freq, variant.total_alleles, variant.hom_NFE, variant.hom_EA, variant.hom_Other, variant.hom_AFR, variant.hom_LAT, variant.hom_SA, variant.hom_FE, variant.pop_NFE, variant.pop_EA, variant.pop_Other, variant.pop_AFR, variant.pop_LAT, variant.pop_SA, variant.pop_FE, variant.pop_total_NFE, variant.pop_total_EA, variant.pop_total_Other, variant.pop_total_AFR, variant.pop_total_LAT, variant.pop_total_SA, variant.pop_total_FE, variant.freq_NFE, variant.freq_EA, variant.freq_Other, variant.freq_AFR, variant.freq_LAT, variant.freq_SA, variant.freq_FE]
+        row = [variant.gene, variant.transcript, variant.cDNA_change, variant.cDNA_pos, variant.cDNA_add, variant.aa_change, variant.chromosome, variant.genomic_start, variant.genomic_start_calc, variant.strand, variant.wt_allele, variant.alt_allele, variant.zygosity, variant.variant_status, variant.mode, variant.refseq_id, variant. ensembl_gene_id, variant.exon_intron, variant.protein_effect, variant.allele_count, variant.tot_allele_num, variant.tot_hom, variant.total_allele_freq, variant.hom_AFR, variant.hom_NFE, variant.hom_EA, variant.hom_FE, variant.hom_LAT, variant.hom_Other, variant.hom_SA, variant.pop_AFR, variant.pop_NFE, variant.pop_EA, variant.pop_FE, variant.pop_LAT, variant.pop_Other, variant.pop_SA, variant.pop_total_AFR, variant.pop_total_NFE, variant.pop_total_EA, variant.pop_total_FE, variant.pop_total_LAT, variant.pop_total_Other, variant.pop_total_SA, variant.freq_AFR, variant.freq_NFE, variant.freq_EA, variant.freq_FE, variant.freq_LAT, variant.freq_Other, variant.freq_SA]
 	# Write row to outfile
         csvwriter.writerow(row)
