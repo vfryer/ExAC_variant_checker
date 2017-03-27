@@ -34,7 +34,7 @@ class Variant:
 
     def ensembl_capture(self,transcript,cdna_pos):
         '''
-        Generate genomic co-ordinate from ensembl REST API using cDNA and transcript
+        Generate genomic co-ordinate of given cDNA position from ensembl REST API using cDNA and transcript
         '''
         cdna_input = str(cdna_pos) + ".." + str(cdna_pos) + "?"
         server = "http://grch37.rest.ensembl.org"
@@ -54,7 +54,7 @@ class Variant:
 
     def cdna_start_coord_capture(self, transcript, cdna_start):
         ''' 
-        Use the cdna_start position to retrieve the genomic co-ordinate
+        Use the cdna_start position to retrieve the genomic co-ordinate of the cDNA position
         '''
         self.ensembl_capture(transcript,cdna_start)
         self.cdna_start_coord = self.cdna_pos_coord
@@ -70,11 +70,12 @@ class Variant:
             self.cdna_end_coord = self.cdna_pos_coord
 
 
-    def working_coords_capture(self,dist_from_cdna_start, dist_from_cdna_end):
+    def working_coords_capture(self,dist_from_cdna_start,dist_from_cdna_end,category):
          '''
          Generate the genomic co-ordinate for the starting cDNA position, start postion for ExAC database (one base before the cDNA position for 
          all variants that are not missense) and end position of variation
          '''
+
          if self.strand == 1:
             self.dna_start_pos = int(self.cdna_start_coord)+int(dist_from_cdna_start)
 
@@ -100,7 +101,11 @@ class Variant:
               else:
                   self.exac_start_pos = int(self.dna_start_pos)-1
          else:    
-              self.exac_start_pos = int(self.dna_start_pos)-1  
+             # ensure SNVs have the ExAC genomic co-ordiante match the cDNA genomic co-ordinate
+             if category == "SNV":
+                 self.exac_start_pos = int(self.dna_start_pos)
+             else:
+                 self.exac_start_pos = int(self.dna_start_pos)-1  
             
 #         print("Strand: " + str(self.strand),"\nDNA start pos: " + str(self.dna_start_pos) + "\nExAC start pos: " + str(self.exac_start_pos) + "\nDNA end pos: " + str(self.dna_end_pos))
 
@@ -378,7 +383,7 @@ with open(file) as infile:
         row[0] = Variant(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16], row[17]) 
         row[0].cdna_start_coord_capture(row[5],row[13]) # uses cDNA start postion to retrieve genomic co-ordinate for start of sequence
         row[0].cdna_end_coord_capture(row[5],row[15]) # uses cDNA end postion to retrieve genomic co-ordinate for end of sequence
-        row[0].working_coords_capture(row[14],row[16]) # use intronic distances form start and end cdna positions to calculate genomic start and end and exac start positions
+        row[0].working_coords_capture(row[14],row[16],row[12]) # use intronic distances from start and end cdna positions to calculate genomic start and end and exac start positions
         row[0].dna_start_base()
         row[0].dna_end_base()
         row[0].exac_start_base()
