@@ -1,4 +1,4 @@
-import csv, requests, sys, json, re
+import csv, requests, sys, json, re, time
 
 # Usage: python other_variants_checker.py filename.csv (where filename.csv is a comma separated value file with headings: 'VARIANT_ID', 'CDNACHANGE', 
 # 'AACHANGE', 'GENE, 'REFSEQ', 'ENSEMBL_TRANSCRIPT', 'ENSEMBL_GENE_ID', 'VARIANTSTATUS', 'ZYGOSITY', 'EXONINTRON', 'PROTEINEFFECT', 'MOI', 
@@ -109,6 +109,8 @@ class Variant:
         '''
         Capture the base at a specified genomic position      
         '''
+        # sleep for 0.5 secs for Ensembl request to avoid 429 "too many requests" error
+        time.sleep(0.05)
         base_input = str(chr) + ":" + str(base_pos) + ".." + str(base_pos) + ":1?"
 
         server = "http://grch37.rest.ensembl.org"
